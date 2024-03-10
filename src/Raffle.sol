@@ -183,11 +183,38 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         s_lastTimeStamp = block.timestamp;
         emit PickedWinner(recentWinner);
 
-        (bool success,) = recentWinner.call{value: address(this).balance}("");
-        if(!success) {
+        (bool success, ) = recentWinner.call{value: address(this).balance}("");
+        if (!success) {
             revert Raffle__TransferFailed();
         }
     }
 
     /* View | Pure */
+    function getRaffleState() external view returns (RaffleState) {
+        return s_raffleState;
+    }
+
+    function getNumWords() external pure returns (uint32) {
+        return NUM_WORDS;
+    }
+
+    function getRequestConfirmations() external pure returns (uint16) {
+        return REQUEST_CONFIRMATIONS;
+    }
+
+    function getRecentWiner() external view returns (address) {
+        return s_recentWinner;
+    }
+
+    function getPlayer(uint256 _index) external view returns (address) {
+        return s_players[_index];
+    }
+
+    function getLastTimeStamp() external view returns (uint256) {
+        return s_lastTimeStamp;
+    }
+
+    function getInterval() external view returns (uint256) {
+        return i_interval;
+    }
 }
