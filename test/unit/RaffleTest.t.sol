@@ -9,6 +9,8 @@ import {Raffle} from "../../src/Raffle.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 
 contract RaffleTest is Test {
+    event EnteredRaffle(address indexed _player);
+
     Raffle raffle;
     HelperConfig helper;
 
@@ -44,4 +46,40 @@ contract RaffleTest is Test {
     }
 
     /* ENTER RAFFLE */
+    function testRaffleRevertWhenYouDontPayEnough() public {
+        vm.startPrank(PLAYER);
+        vm.expectRevert(Raffle.Raffle__SendMoreToEnter.selector);
+        raffle.enterRaffle();
+        vm.stopPrank();
+    }
+
+    function testRaffleRecordsPlayerWhenTheyEnter() public {
+        vm.startPrank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.stopPrank();
+        address playerRecorded = raffle.getPlayer(0);
+        assert(playerRecorded == PLAYER);
+    }
+
+    function testEmitsEventOnEntrance() public {
+        vm.startPrank(PLAYER);
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit EnteredRaffle(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.stopPrank();
+    }
+
+    function testCantEnterWhenRaffleStateIsCalculating() public {
+        vm.startPrank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.stopPrank();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        raffle.performUpkeep("");
+
+        vm.startPrank(PLAYER);
+        vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.stopPrank();
+    }
 }
